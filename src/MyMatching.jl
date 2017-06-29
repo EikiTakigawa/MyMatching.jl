@@ -15,11 +15,11 @@ function my_deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vec
         indptr[i+1] = indptr[i] + caps[i]
     end
     
-    while sum(prop_matched .== -1) != 0
+    while -1 in prop_matched
         for i in 1:p
             k = 1
             while prop_matched[i] == -1 && k <= length(prop_prefs[i])
-                if findfirst(resp_prefs[prop_prefs[i][k]] ,i) != 0
+                if i in resp_prefs[prop_prefs[i][k]]
                     if resp_matched[indptr[prop_prefs[i][k]+1]-1] == 0
                         resp_matched[indptr[prop_prefs[i][k]+1]-1] = i
                         prop_matched[i] = prop_prefs[i][k]
@@ -45,16 +45,11 @@ function my_deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vec
                             prop_matched[i] = prop_prefs[i][k]
                             l = 1
                             while l < caps[prop_matched[i]]
-                                if resp_matched[indptr[prop_prefs[i][k]+1]-1-l] == 0
+                                if findfirst(resp_prefs[prop_matched[i]], i) < findfirst(resp_prefs[prop_matched[i]], resp_matched[indptr[prop_prefs[i][k]+1]-1-l])
+                                    resp_matched[indptr[prop_prefs[i][k]+1]-l] = resp_matched[indptr[prop_prefs[i][k]+1]-1-l]
                                     resp_matched[indptr[prop_prefs[i][k]+1]-1-l] = i
-                                    resp_matched[indptr[prop_prefs[i][k]+1]-l] = 0
                                 else
-                                    if findfirst(resp_prefs[prop_matched[i]], i) < findfirst(resp_prefs[prop_matched[i]], resp_matched[indptr[prop_prefs[i][k]+1]-1-l])
-                                        resp_matched[indptr[prop_prefs[i][k]+1]-l] = resp_matched[indptr[prop_prefs[i][k]+1]-1-l]
-                                        resp_matched[indptr[prop_prefs[i][k]+1]-1-l] = i
-                                    else
-                                        l = Inf
-                                    end
+                                    l = Inf
                                 end
                                 l += 1
                             end
@@ -79,3 +74,5 @@ function my_deferred_acceptance(prop_prefs::Vector{Vector{Int}},resp_prefs::Vect
 end
 
 end
+
+
