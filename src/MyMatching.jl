@@ -1,7 +1,7 @@
 
 module MyMatching
 
-export my_deferred_acceptance
+export my_deferred_acceptance, my_Boston_school_match
 
 # for many-to-one matching
 function my_deferred_acceptance(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}, caps::Vector{Int})
@@ -71,6 +71,67 @@ function my_deferred_acceptance(prop_prefs::Vector{Vector{Int}},resp_prefs::Vect
     caps = ones(Int, length(resp_prefs))
     prop_matched, resp_matched, indptr = my_deferred_acceptance(prop_prefs, resp_prefs, caps)
     return prop_matched, resp_matched
+end
+
+function my_Boston_school_match(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vector{Vector{Int}}, caps::Vector{Int})
+    p = length(prop_prefs)
+    r = length(resp_prefs)
+    prop_matched = zeros(Int, p)
+    resp_matched = zeros(Int, sum(caps))
+    indptr = Array{Int}(r+1)
+    indptr[1] = 1
+    c = copy(caps)
+    for i in 1:r
+        indptr[i+1] = indptr[i] + c[i]
+    end
+    
+    for i in 1:maximum(length.(prop_prefs))
+        for j in 1:p
+            if prop_matched[j] == 0 && length(prop_prefs[j]) >= i
+                if j in resp_prefs[prop_prefs[j][i]] && c[prop_prefs[j][i]] != 0
+                    if resp_matched[indptr[prop_prefs[j][i]+1]-1] == 0
+                        resp_matched[indptr[prop_prefs[j][i]+1]-1] = j
+                        prop_matched[j] = prop_prefs[j][i]
+                        l = 1
+                        while l < c[prop_matched[j]]
+                            if resp_matched[indptr[prop_prefs[j][i]+1]-1-l] == 0
+                                resp_matched[indptr[prop_prefs[j][i]+1]-1-l] = j
+                                resp_matched[indptr[prop_prefs[j][i]+1]-l] = 0
+                            else
+                                if findfirst(resp_prefs[prop_matched[j]], j) < findfirst(resp_prefs[prop_matched[j]], resp_matched[indptr[prop_prefs[j][i]+1]-1-l])
+                                    resp_matched[indptr[prop_prefs[j][i]+1]-l] = resp_matched[indptr[prop_prefs[j][i]+1]-1-l]
+                                    resp_matched[indptr[prop_prefs[j][i]+1]-1-l] = j
+                                else
+                                    l = Inf
+                                end
+                            end
+                            l += 1
+                        end
+                    else
+                        if findfirst(resp_prefs[prop_prefs[j][i]], j) < findfirst(resp_prefs[prop_prefs[j][i]], resp_matched[indptr[prop_prefs[j][i]+1]-1])
+                            prop_matched[resp_matched[indptr[prop_prefs[j][i]+1]-1]] = 0
+                            resp_matched[indptr[prop_prefs[j][i]+1]-1] = j
+                            prop_matched[j] = prop_prefs[j][i]
+                            l = 1
+                            while l < c[prop_matched[j]]
+                                if findfirst(resp_prefs[prop_matched[j]], j) < findfirst(resp_prefs[prop_matched[j]], resp_matched[indptr[prop_prefs[j][i]+1]-1-l])
+                                    resp_matched[indptr[prop_prefs[j][i]+1]-l] = resp_matched[indptr[prop_prefs[j][i]+1]-1-l]
+                                    resp_matched[indptr[prop_prefs[j][i]+1]-1-l] = j
+                                else
+                                    l = Inf
+                                end
+                                l += 1
+                            end
+                        end
+                    end
+                end
+            end 
+        end
+        for k in 1:r
+            c[k] = c[k] - sum(resp_matched[indptr[k]:indptr[k+1]-1] .!= 0)
+        end
+    end
+    return prop_matched, resp_matched, indptr
 end
 
 end
