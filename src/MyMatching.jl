@@ -128,7 +128,7 @@ function my_Boston_school_match(prop_prefs::Vector{Vector{Int}}, resp_prefs::Vec
             end 
         end
         for k in 1:r
-            c[k] = c[k] - sum(resp_matched[indptr[k]:indptr[k+1]-1] .!= 0)
+            c[k] = caps[k] - sum(resp_matched[indptr[k]:indptr[k+1]-1] .!= 0)
         end
     end
     return prop_matched, resp_matched, indptr
